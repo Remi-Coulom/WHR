@@ -1,0 +1,71 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// CElo.cpp
+// according to http://gemma.ujf.cas.cz/~cieply/GO/gormain.html
+//
+// Rémi Coulom
+//
+// January, 2008
+//
+/////////////////////////////////////////////////////////////////////////////
+#include "CElo.h"
+#include "CGameCollection.h"
+
+#include <cmath>
+
+using namespace whr;
+
+/////////////////////////////////////////////////////////////////////////////
+// Constructor
+/////////////////////////////////////////////////////////////////////////////
+CElo::CElo(const CGameCollection &gc):
+ vRating(gc.GetPlayers()),
+ k(20.0)
+{
+ AddParameter("k", k);
+ Reset();
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Reset
+/////////////////////////////////////////////////////////////////////////////
+void CElo::Reset()
+{
+ std::fill(vRating.begin(), vRating.end(), 0);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Predict the outcome of one game (probability that Black wins)
+/////////////////////////////////////////////////////////////////////////////
+float CElo::Predict(int Handicap,
+                    int Komi,
+                    int Black,
+                    int White,
+                    int Day)
+{
+ float D = vRating[White] - vRating[Black];
+ float p = 1.0f / (1.0f + std::pow(10.0f, D / 400.0f));
+ return p;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Add one game, and update ratings
+/////////////////////////////////////////////////////////////////////////////
+void CElo::AddGame(const CGame &game)
+{
+ int Black = game.GetBlack();
+ int White = game.GetWhite();
+
+ //
+ // Compute winning expectancy
+ //
+ float D = vRating[White] - vRating[Black];
+ float p = 1.0f / (1.0f + std::pow(10.0f, D / 400.0f));
+
+ //
+ // Update ratings
+ //
+ float Delta = k * (float(game.GetResult()) - p);
+ vRating[Black] += Delta;
+ vRating[White] -= Delta;
+}
